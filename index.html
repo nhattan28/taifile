@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tải File lên Drive</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>📁 Tải File</h1>
+
+    <input type="file" id="fileInput" webkitdirectory directory multiple>
+    <button onclick="uploadFiles()">🚀 Tải lên</button>
+
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>Đang tải lên... Xin chờ một chút nha 😎</p>
+    </div>
+
+    <ul id="resultList"></ul>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxUQvAPBqo-wPNm9Me3hZfSbGdWVG-uXqwB_XxLsNt6qvbzawcilz7qx-bM27aKe4I9/exec'; // Dán link script Google Apps Script ở đây
+
+    function uploadFiles() {
+      const files = document.getElementById('fileInput').files;
+      const result = document.getElementById('resultList');
+      const loading = document.getElementById('loading');
+
+      result.innerHTML = '';
+      if (!files.length) return;
+
+      loading.style.display = 'block';
+      let completed = 0;
+
+      for (let file of files) {
+        const fileName = file.webkitRelativePath || file.name;
+
+        const reader = new FileReader();
+        reader.onload = function () {
+          const form = new FormData();
+          form.append("file", reader.result.split(',')[1]);
+          form.append("name", fileName);
+
+          fetch(scriptURL, {
+            method: 'POST',
+            body: form,
+          })
+            .then(res => res.text())
+            .then(txt => {
+              const li = document.createElement('li');
+              li.className = txt.includes("Tồn tại") ? 'duplicate' : 'success';
+              li.textContent = txt;
+              result.appendChild(li);
+            })
+            .catch(() => {
+              const li = document.createElement('li');
+              li.className = 'error';
+              li.textContent = `❌ Lỗi khi upload: ${fileName}`;
+              result.appendChild(li);
+            })
+            .finally(() => {
+              completed++;
+              if (completed === files.length) {
+                loading.style.display = 'none';
+              }
+            });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  </script>
+</body>
+</html>
